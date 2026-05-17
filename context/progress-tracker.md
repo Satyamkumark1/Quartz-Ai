@@ -5,11 +5,11 @@ change.
 
 ## Current Phase
 
-- Complete
+- Editor Implementation
 
 ## Current Goal
 
-- Add design system and UI primitives components (shadcn/ui)
+- Build base chrome components (Editor Navbar and Project Sidebar)
 
 ## Completed
 
@@ -17,13 +17,13 @@ change.
 - Add shadcn components: Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea
 - Verify theme matching in `globals.css` (Forced default to dark mode)
 
-## In Progress
+## In Progress 
 
 - None yet.
 
 ## Next Up
 
-- [Next unit to build]
+- Begin work on `03-chat-interface.md` (or next specs unit)
 
 ## Open Questions
 
