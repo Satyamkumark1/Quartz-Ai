@@ -3,6 +3,7 @@ import { checkProjectAccess, getUserProjects } from "@/lib/project-access";
 import { AccessDenied } from "@/components/editor/access-denied";
 import { EditorLayout } from "@/components/editor/editor-layout";
 import { Compass, Sparkles, Bot } from "lucide-react";
+import { CanvasWrapper } from "@/components/editor/canvas-wrapper";
 
 interface EditorRoomPageProps {
   params: Promise<{
@@ -35,26 +36,8 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
     >
       <div className="flex h-full w-full gap-3">
         {/* Canvas Area */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#0f0f11] rounded-2xl border border-white/5 relative overflow-hidden">
-          {/* Faux Grid Background */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
-          
-          <div className="text-center space-y-4 max-w-md z-10">
-            <div className="mx-auto h-12 w-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center mb-6">
-              <Compass className="h-6 w-6 text-cyan-400" />
-            </div>
-            <p className="text-xs font-semibold tracking-widest text-zinc-500 uppercase">
-              WORKSPACE SHELL
-            </p>
-            <h2 className="text-2xl font-medium text-zinc-100">
-              Canvas and collaboration tooling land here next.
-            </h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              This room is ready for the shared architecture canvas, durable AI workflows, and
-              real-time presence. For now, the shell is wired with project context and
-              navigation only.
-            </p>
-          </div>
+        <div className="flex-1 bg-[#0f0f11] rounded-2xl border border-white/5 relative overflow-hidden">
+          <CanvasWrapper roomId={roomId} />
         </div>
         
         {/* Right Sidebar Placeholder */}

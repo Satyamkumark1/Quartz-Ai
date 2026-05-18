@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- Implement REST API endpoints for projects per `06-project-api.md`
+- Implement Shape Panel per `12-shape-panel.md`
 
 ## Completed
 
@@ -39,6 +39,9 @@ change.
 - Update Workspace layout with `EditorNavbar` and `ProjectSidebar` enhancements
 - Build the `/editor/[roomId]` workspace shell with server-side access checks
 - Implement Share Dialog functionality
+- Set up Liveblocks integration (`10-liveblocks-setup.md`)
+- Set up Editor canvas
+- Implement Shape Panel (`12-shape-panel.md`)
 
 ## In Progress 
 
@@ -46,7 +49,7 @@ change.
 
 ## Next Up
 
-- Set up Liveblocks integration (09-liveblocks-setup.md or similar)
+- Add AI workflows and collaboration controls
 
 ## Open Questions
 
