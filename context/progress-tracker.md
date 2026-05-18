@@ -34,14 +34,19 @@ change.
 - Create `DELETE /api/projects/[projectId]` endpoint
 - Connect API endpoints to UI components
 - Wire up project actions to the frontend components (Editor Home, Sidebar, Dialogs)
+- Implement `/editor/[roomId]` server component with access checks
+- Create `AccessDenied` component
+- Update Workspace layout with `EditorNavbar` and `ProjectSidebar` enhancements
+- Build the `/editor/[roomId]` workspace shell with server-side access checks
+- Implement Share Dialog functionality
 
 ## In Progress 
 
-- Begin next specs unit (08-liveblocks-setup.md)
+- 
 
 ## Next Up
 
-- Set up Liveblocks integration
+- Set up Liveblocks integration (09-liveblocks-setup.md or similar)
 
 ## Open Questions
 
