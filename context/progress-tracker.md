@@ -5,17 +5,23 @@ change.
 
 ## Current Phase
 
-- Editor Implementation
+- Authentication Implementation
 
 ## Current Goal
 
-- Build base chrome components (Editor Navbar and Project Sidebar)
+- Implement clerk authentication per 03-auth.md
 
 ## Completed
 
 - Install and configure shadcn/ui
 - Add shadcn components: Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea
 - Verify theme matching in `globals.css` (Forced default to dark mode)
+- Build base chrome components (Editor Navbar and Project Sidebar)
+- Install `@clerk/themes` and configure `ClerkProvider` in root layout
+- Create `proxy.ts` middleware to protect routes
+- Implement responsive Sign In and Sign Up pages with custom layout
+- Configure `/` redirect logic to `/editor` (authed) or `/sign-in` (unauthed)
+- Add `UserButton` to `EditorNavbar`
 
 ## In Progress 
 
@@ -23,7 +29,7 @@ change.
 
 ## Next Up
 
-- Begin work on `03-chat-interface.md` (or next specs unit)
+- Begin work on next specs unit
 
 ## Open Questions
 

@@ -1,11 +1,12 @@
-import { EditorLayout } from "@/components/editor/editor-layout";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <EditorLayout>
-      <div className="flex items-center justify-center h-full">
-        GhostAI Editor Canvas
-      </div>
-    </EditorLayout>
-  );
+export default async function Home() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/editor");
+  } else {
+    redirect("/sign-in");
+  }
 }
