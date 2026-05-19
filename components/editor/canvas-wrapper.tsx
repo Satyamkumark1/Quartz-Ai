@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Component, ReactNode } from "react";
-import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react";
+import { ClientSideSuspense } from "@liveblocks/react";
 import { CanvasFlow } from "./canvas-flow";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -32,17 +32,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-export function CanvasWrapper({ roomId }: { roomId: string }) {
+export function CanvasWrapper() {
   return (
-    <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
-      <RoomProvider id={roomId} initialPresence={{ cursor: null, isThinking: false }}>
-        <ErrorBoundary fallback={<CanvasError />}>
-          <ClientSideSuspense fallback={<CanvasLoading />}>
-            <CanvasFlow />
-          </ClientSideSuspense>
-        </ErrorBoundary>
-      </RoomProvider>
-    </LiveblocksProvider>
+    <ErrorBoundary fallback={<CanvasError />}>
+      <ClientSideSuspense fallback={<CanvasLoading />}>
+        <CanvasFlow />
+      </ClientSideSuspense>
+    </ErrorBoundary>
   );
 }
 

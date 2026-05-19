@@ -3,12 +3,13 @@
 import { useCallback, useState, useEffect } from "react";
 import { ReactFlow, Background, BackgroundVariant, ConnectionMode, useReactFlow, ReactFlowProvider, Panel } from "@xyflow/react";
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow";
-import { useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react";
+import { useUndo, useRedo, useCanUndo, useCanRedo, useOther } from "@liveblocks/react";
+import { Cursor as LiveblocksCursor } from "@liveblocks/react-ui";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { CanvasNode } from "./nodes/canvas-node";
 import { ShapePanel } from "./shape-panel";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Maximize, Undo2, Redo2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Undo2, Redo2, Loader2 } from "lucide-react";
 import { CanvasEdge } from "./edges/canvas-edge";
 import { StarterTemplatesModal } from "./starter-templates-modal";
 import { CanvasTemplate } from "./starter-templates";
@@ -25,6 +26,26 @@ const nodeTypes = {
 const edgeTypes = {
   canvasEdge: CanvasEdge,
 };
+
+function CursorWithThinking({ connectionId }: { userId: string; connectionId: number }) {
+  const cursor = useOther(connectionId, (other) => ({
+    color: other.info.color,
+    name: other.info.name,
+    thinking: Boolean(other.presence.thinking || other.presence.isThinking),
+  }));
+
+  return (
+    <LiveblocksCursor
+      color={cursor.color}
+      label={
+        <span className="inline-flex items-center gap-1">
+          {cursor.thinking ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+          <span>{cursor.name}</span>
+        </span>
+      }
+    />
+  );
+}
 
 function Flow() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
@@ -159,7 +180,7 @@ function Flow() {
           </defs>
         </svg>
         <Background variant={BackgroundVariant.Dots} color="#ffffff30" />
-        <Cursors />
+        <Cursors components={{ Cursor: CursorWithThinking }} />
         <Panel position="bottom-left" className="mb-6 ml-6">
           <div className="flex items-center gap-1 p-1 bg-[#18181b] border border-white/10 rounded-full shadow-lg">
             <div className="flex items-center">

@@ -6,6 +6,7 @@ import { ProjectSidebar } from "./project-sidebar";
 import { ProjectDialogsProvider, Project } from "./project-context";
 import { ProjectDialogs } from "./project-dialogs";
 import { AiSidebar } from "./ai-sidebar";
+import { LiveblocksProvider, RoomProvider } from "@liveblocks/react";
 
 interface EditorLayoutProps {
   children: React.ReactNode;
@@ -21,6 +22,20 @@ export function EditorLayout({ children, projects, projectName, currentRoomId, i
 
   const toggleAiSidebar = () => setIsAiSidebarOpen((prev) => !prev);
   const closeAiSidebar = () => setIsAiSidebarOpen(false);
+
+  const workspace = (
+    <>
+      <main className="flex-1 w-full overflow-hidden flex">
+        {children}
+      </main>
+      <AiSidebar
+        isOpen={isAiSidebarOpen}
+        onClose={closeAiSidebar}
+        hasRoom={Boolean(currentRoomId)}
+        roomId={currentRoomId}
+      />
+    </>
+  );
 
   return (
     <ProjectDialogsProvider>
@@ -40,10 +55,23 @@ export function EditorLayout({ children, projects, projectName, currentRoomId, i
             projects={projects}
             currentRoomId={currentRoomId}
           />
-          <main className="flex-1 w-full overflow-hidden flex">
-            {children}
-          </main>
-          <AiSidebar isOpen={isAiSidebarOpen} onClose={closeAiSidebar} />
+          {currentRoomId ? (
+            <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+              <RoomProvider
+                id={currentRoomId}
+                initialPresence={{
+                  cursor: null,
+                  isThinking: false,
+                  thinking: false,
+                  status: null,
+                }}
+              >
+                {workspace}
+              </RoomProvider>
+            </LiveblocksProvider>
+          ) : (
+            workspace
+          )}
         </div>
       </div>
       <ProjectDialogs />

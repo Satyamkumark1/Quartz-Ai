@@ -37,7 +37,7 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
       <div className="flex h-full w-full gap-3">
         {/* Canvas Area */}
         <div className="flex-1 bg-[#0f0f11] rounded-2xl border border-white/5 relative overflow-hidden">
-          <CanvasWrapper roomId={roomId} />
+          <CanvasWrapper />
         </div>
       </div>
     </EditorLayout>

@@ -6,6 +6,8 @@ declare global {
     Presence: {
       cursor: { x: number; y: number } | null;
       isThinking: boolean;
+      thinking?: boolean;
+      status?: string | null;
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
@@ -25,7 +27,14 @@ declare global {
     };
 
     // Custom events, for useBroadcastEvent, useEventListener
-    RoomEvent: {};
+    RoomEvent:
+      | {
+          type: "ai-status";
+          feedId: "ai-status-feed";
+          text: string;
+          state: "started" | "processing" | "complete" | "error";
+          createdAt: string;
+        };
       // Example has two events, using a union
       // | { type: "PLAY" } 
       // | { type: "REACTION"; emoji: "🔥" };

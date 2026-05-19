@@ -1,16 +1,38 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { Bot, X, Send, FileText, Download, Sparkles, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect, KeyboardEvent, type ReactNode } from "react";
+import { Bot, X, Send, FileText, Download, Sparkles, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRealtimeRun } from "@trigger.dev/react-hooks";
+import type { designAgent } from "@/trigger/design-agent";
+import {
+  useCreateFeedMessage,
+  useCreateFeed,
+  useEventListener,
+  useFeedMessages,
+  useOthers,
+  useSelf,
+} from "@liveblocks/react";
+import {
+  AI_STATUS_FEED_ID,
+  AI_CHAT_FEED_ID,
+  isAiStatusFeedMessage,
+  isAiChatFeedMessage,
+  type AiStatusFeedMessage,
+  type AiChatFeedMessage,
+} from "@/types/tasks";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  sender?: {
+    name: string;
+    avatar: string;
+  };
 }
 
 const STARTER_CHIPS = [
@@ -28,13 +50,30 @@ const DEMO_SPEC = {
 interface AiSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  hasRoom?: boolean;
+  roomId?: string;
 }
 
-export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+type AiStatusState = {
+  isActive: boolean;
+  message: AiStatusFeedMessage | null;
+};
+
+interface AiSidebarRoomContext {
+  status: AiStatusState;
+  chat: {
+    messages: Message[];
+    sendMessage: (text: string) => void | Promise<void>;
+  };
+  runId?: string;
+}
+
+export function AiSidebar({ isOpen, onClose, hasRoom = false, roomId }: AiSidebarProps) {
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fallbackStatus: AiStatusState = { isActive: false, message: null };
 
   // Auto-resize textarea
   useEffect(() => {
@@ -48,36 +87,201 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   // Scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [localMessages]);
 
-  function sendMessage(text: string) {
+  function handleSendMessage(text: string, roomContext: AiSidebarRoomContext) {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    const id = `${Date.now()}-${Math.random()}`;
-    setMessages((prev) => [
-      ...prev,
-      { id, role: "user", content: trimmed },
-    ]);
-    setInput("");
-    // Stub assistant reply
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-assistant`,
-          role: "assistant",
-          content: `Got it! I'll help you with: "${trimmed}". Architecture generation and AI responses are coming soon.`,
-        },
-      ]);
-    }, 600);
-  }
+    if (!trimmed || roomContext.status.isActive) return;
 
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
+    if (hasRoom) {
+      roomContext.chat.sendMessage(trimmed);
+      setInput("");
+    } else {
+      const id = `${Date.now()}-${Math.random()}`;
+      setLocalMessages((prev) => [
+        ...prev,
+        { id, role: "user", content: trimmed },
+      ]);
+      setInput("");
+      // Stub assistant reply
+      setTimeout(() => {
+        setLocalMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-assistant`,
+            role: "assistant",
+            content: `Got it! I'll help you with: "${trimmed}". Architecture generation and AI responses are coming soon.`,
+          },
+        ]);
+      }, 600);
     }
   }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, roomContext: AiSidebarRoomContext) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(input, roomContext);
+    }
+  }
+
+  const ArchitectTabContent = ({
+    roomContext,
+    hasRoom,
+    localMessages,
+    input,
+    setInput,
+    handleKeyDown,
+    handleSendMessage,
+  }: {
+    roomContext: AiSidebarRoomContext;
+    hasRoom: boolean;
+    localMessages: Message[];
+    input: string;
+    setInput: (val: string) => void;
+    handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>, ctx: AiSidebarRoomContext) => void;
+    handleSendMessage: (text: string, ctx: AiSidebarRoomContext) => void;
+  }) => {
+    const { status, chat } = roomContext;
+    const isAiActive = status.isActive;
+    const statusText = status.message?.text;
+    const messages = hasRoom ? chat.messages : localMessages;
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-resize textarea
+    useEffect(() => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.style.height = "auto";
+      const capped = Math.min(ta.scrollHeight, 160);
+      ta.style.height = `${Math.max(72, capped)}px`;
+    }, [input]);
+
+    // Scroll to bottom on new message
+    useEffect(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    return (
+      <TabsContent value="architect" className="flex flex-col flex-1 min-h-0 mt-3">
+        {/* Chat scroll area */}
+        <div className="flex-1 min-h-0 px-4">
+          <ScrollArea className="h-full">
+            {messages.length === 0 ? (
+              /* Empty state */
+              <div className="flex flex-col items-center text-center pt-6 pb-4 gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-primary-text">Ghost AI Architect</p>
+                  <p className="text-xs text-muted-text mt-1 leading-relaxed max-w-[220px]">
+                    Describe a system and I&apos;ll help design the architecture diagram.
+                  </p>
+                </div>
+                {/* Starter chips */}
+                <div className="flex flex-col gap-2 w-full mt-1">
+                  {STARTER_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      onClick={() => handleSendMessage(chip, roomContext)}
+                      disabled={isAiActive}
+                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-subtle border border-sidebar-border text-left text-xs text-accent-text hover:bg-accent/10 hover:border-accent/20 transition-colors group disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span>{chip}</span>
+                      <ChevronRight className="h-3 w-3 text-muted-text group-hover:text-accent transition-colors shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Messages */
+              <div className="flex flex-col gap-3 pb-2">
+                {messages.map((msg) =>
+                  msg.role === "user" ? (
+                    <div key={msg.id} className="flex flex-col items-end gap-1">
+                      {hasRoom && msg.sender && (
+                        <div className="flex items-center gap-1.5 px-1">
+                          <span className="text-[10px] font-medium text-muted-text">
+                            {msg.sender.name}
+                          </span>
+                          <img
+                            src={msg.sender.avatar}
+                            alt={msg.sender.name}
+                            className="h-3.5 w-3.5 rounded-full"
+                          />
+                        </div>
+                      )}
+                      <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-tr-sm bg-[#62C073] text-black text-xs leading-relaxed font-medium shadow-sm">
+                        {msg.content}
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={msg.id} className="flex flex-col items-start gap-1">
+                      <div className="max-w-[90%] px-3 py-2 rounded-2xl rounded-tl-sm bg-elevated border border-sidebar-border text-zinc-200 text-xs leading-relaxed shadow-sm">
+                        {msg.content}
+                      </div>
+                    </div>
+                  )
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* Status strip */}
+        {isAiActive && statusText && (
+          <div className="mx-4 mt-2 flex items-center gap-2 rounded-xl border border-[#62C073]/20 bg-[#1a1a1a] px-3 py-2 text-[10px] text-zinc-300">
+            <div className="relative flex h-2 w-2 items-center justify-center">
+              <div className="absolute h-full w-full animate-ping rounded-full bg-[#62C073] opacity-75"></div>
+              <div className="relative h-1.5 w-1.5 rounded-full bg-[#62C073]"></div>
+            </div>
+            <span className="min-w-0 truncate font-medium">{statusText}</span>
+          </div>
+        )}
+
+        {/* Input area */}
+        <div className="shrink-0 p-4 pt-3 border-t border-sidebar-border mt-2">
+          <div className="flex gap-2 items-end">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, roomContext)}
+              placeholder="Describe your system..."
+              disabled={isAiActive}
+              className="flex-1 resize-none min-h-[72px] max-h-[160px] bg-muted border-sidebar-border text-primary-text placeholder:text-muted-text text-xs rounded-xl focus-visible:ring-[#62C073]/30 focus-visible:ring-1 focus-visible:border-[#62C073]/30 leading-relaxed disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            <Button
+              size="icon"
+              className="h-9 w-9 shrink-0 bg-[#62C073] hover:bg-[#62C073]/90 text-black rounded-xl shadow-sm transition-all active:scale-95 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:scale-100"
+              onClick={() => handleSendMessage(input, roomContext)}
+              disabled={!input.trim() || isAiActive}
+            >
+              {isAiActive ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              <span className="sr-only">Send message</span>
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-text mt-1.5 text-center">
+            Enter to send · Shift+Enter for newline
+          </p>
+        </div>
+      </TabsContent>
+    );
+  };
+
+  const localRoomContext: AiSidebarRoomContext = {
+    status: fallbackStatus,
+    chat: {
+      messages: localMessages,
+      sendMessage: (text) => handleSendMessage(text, localRoomContext),
+    },
+  };
 
   return (
     <>
@@ -134,85 +338,31 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
           </TabsList>
 
           {/* AI Architect Tab */}
-          <TabsContent value="architect" className="flex flex-col flex-1 min-h-0 mt-3">
-            {/* Chat scroll area */}
-            <div className="flex-1 min-h-0 px-4">
-              <ScrollArea className="h-full" ref={messagesEndRef as React.RefObject<HTMLDivElement>}>
-                {messages.length === 0 ? (
-                  /* Empty state */
-                  <div className="flex flex-col items-center text-center pt-6 pb-4 gap-3">
-                    <div className="h-12 w-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                      <Sparkles className="h-5 w-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-primary-text">Ghost AI Architect</p>
-                      <p className="text-xs text-muted-text mt-1 leading-relaxed max-w-[220px]">
-                        Describe a system and I&apos;ll help design the architecture diagram.
-                      </p>
-                    </div>
-                    {/* Starter chips */}
-                    <div className="flex flex-col gap-2 w-full mt-1">
-                      {STARTER_CHIPS.map((chip) => (
-                        <button
-                          key={chip}
-                          onClick={() => sendMessage(chip)}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-subtle border border-sidebar-border text-left text-xs text-accent-text hover:bg-accent/10 hover:border-accent/20 transition-colors group"
-                        >
-                          <span>{chip}</span>
-                          <ChevronRight className="h-3 w-3 text-muted-text group-hover:text-accent transition-colors shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  /* Messages */
-                  <div className="flex flex-col gap-3 pb-2">
-                    {messages.map((msg) =>
-                      msg.role === "user" ? (
-                        <div key={msg.id} className="flex justify-end">
-                          <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-tr-sm bg-brand-dim border-2 border-brand/50 text-copy-primary text-xs leading-relaxed">
-                            {msg.content}
-                          </div>
-                        </div>
-                      ) : (
-                        <div key={msg.id} className="flex justify-start">
-                          <div className="max-w-[90%] px-3 py-2 rounded-2xl rounded-tl-sm bg-elevated border border-sidebar-border text-accent-text text-xs leading-relaxed">
-                            {msg.content}
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-
-            {/* Input area */}
-            <div className="shrink-0 p-4 pt-3 border-t border-sidebar-border mt-2">
-              <div className="flex gap-2 items-end">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Describe your system..."
-                  className="flex-1 resize-none min-h-[72px] max-h-[160px] bg-muted border-sidebar-border text-primary-text placeholder:text-muted-text text-xs rounded-xl focus-visible:ring-accent/30 focus-visible:ring-1 focus-visible:border-accent/30 leading-relaxed"
+          {hasRoom && roomId ? (
+            <AiSidebarRoomState roomId={roomId}>
+              {(roomContext) => (
+                <ArchitectTabContent
+                  roomContext={roomContext}
+                  hasRoom={hasRoom}
+                  localMessages={localMessages}
+                  input={input}
+                  setInput={setInput}
+                  handleKeyDown={handleKeyDown}
+                  handleSendMessage={handleSendMessage}
                 />
-                <Button
-                  size="icon"
-                  className="h-9 w-9 shrink-0 bg-accent hover:bg-accent/90 text-white rounded-xl"
-                  onClick={() => sendMessage(input)}
-                  disabled={!input.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="sr-only">Send message</span>
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-text mt-1.5 text-center">
-                Enter to send · Shift+Enter for newline
-              </p>
-            </div>
-          </TabsContent>
+              )}
+            </AiSidebarRoomState>
+          ) : (
+            <ArchitectTabContent
+              roomContext={localRoomContext}
+              hasRoom={hasRoom}
+              localMessages={localMessages}
+              input={input}
+              setInput={setInput}
+              handleKeyDown={handleKeyDown}
+              handleSendMessage={handleSendMessage}
+            />
+          )}
 
           {/* Specs Tab */}
           <TabsContent value="specs" className="flex flex-col flex-1 min-h-0 mt-3">
@@ -264,4 +414,182 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
       </div>
     </>
   );
+}
+
+function AiSidebarRoomState({
+  children,
+  roomId,
+}: {
+  children: (context: AiSidebarRoomContext) => ReactNode;
+  roomId: string;
+}) {
+  const self = useSelf();
+  const createFeed = useCreateFeed();
+  const addFeedMessage = useCreateFeedMessage();
+  const { messages: statusMessages } = useFeedMessages(AI_STATUS_FEED_ID, { limit: 10 });
+  const { messages: chatFeedMessages } = useFeedMessages(AI_CHAT_FEED_ID, { limit: 50 });
+  const [eventMessage, setEventMessage] = useState<AiStatusFeedMessage | null>(null);
+
+  const [runId, setRunId] = useState<string | undefined>();
+  const [publicToken, setPublicToken] = useState<string | undefined>();
+
+  const { run } = useRealtimeRun<typeof designAgent>(runId, {
+    accessToken: publicToken,
+    enabled: !!runId && !!publicToken,
+  });
+
+  const isPresenceActive = useOthers((others) =>
+    others.some((other) => other.presence.thinking || other.presence.isThinking)
+  );
+
+  useEffect(() => {
+    createFeed(AI_STATUS_FEED_ID, { metadata: { type: "ai-status" } }).catch(() => {
+      // The feed may already exist
+    });
+    createFeed(AI_CHAT_FEED_ID, { metadata: { type: "ai-chat" } }).catch(() => {
+      // The feed may already exist
+    });
+  }, [createFeed]);
+
+  // Monitor run status for completion
+  useEffect(() => {
+    if (!run || !runId) return;
+
+    if (run.status === "COMPLETED") {
+      const payload: AiChatFeedMessage = {
+        type: "ai-chat",
+        role: "assistant",
+        content: "I've updated the canvas based on your request!",
+        createdAt: new Date().toISOString(),
+      };
+      addFeedMessage(AI_CHAT_FEED_ID, payload).catch(console.error);
+      setRunId(undefined);
+      setPublicToken(undefined);
+    } else if (
+      run.status === "FAILED" ||
+      run.status === "CANCELED" ||
+      run.status === "CRASHED"
+    ) {
+      const payload: AiChatFeedMessage = {
+        type: "ai-chat",
+        role: "assistant",
+        content: "Sorry, I encountered an error while updating the canvas.",
+        createdAt: new Date().toISOString(),
+      };
+      addFeedMessage(AI_CHAT_FEED_ID, payload).catch(console.error);
+      setRunId(undefined);
+      setPublicToken(undefined);
+    }
+  }, [run?.status, runId, addFeedMessage]);
+
+  useEventListener(({ event }) => {
+    if (event.type !== "ai-status") return;
+
+    const candidate = {
+      type: "ai-status",
+      text: event.text,
+      state: event.state,
+      createdAt: event.createdAt,
+    };
+
+    if (isAiStatusFeedMessage(candidate)) {
+      setEventMessage(candidate);
+    }
+  });
+
+  const latestFeedStatus =
+    statusMessages
+      ?.map((message) => message.data)
+      .filter(isAiStatusFeedMessage)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .at(-1) ?? null;
+
+  const latestStatus =
+    eventMessage &&
+    (!latestFeedStatus || eventMessage.createdAt >= latestFeedStatus.createdAt)
+      ? eventMessage
+      : latestFeedStatus;
+
+  const isFeedActive =
+    latestStatus?.state === "started" || latestStatus?.state === "processing";
+
+  const isRunActive =
+    run !== undefined &&
+    run.status !== "COMPLETED" &&
+    run.status !== "CANCELED" &&
+    run.status !== "FAILED" &&
+    run.status !== "CRASHED" &&
+    run.status !== "SYSTEM_FAILURE" &&
+    run.status !== "EXPIRED" &&
+    run.status !== "TIMED_OUT";
+
+  const chatMessages: Message[] = (chatFeedMessages ?? [])
+    .map((msg) => ({ id: msg.id, data: msg.data }))
+    .filter((item): item is { id: string; data: AiChatFeedMessage } => isAiChatFeedMessage(item.data))
+    .sort((a, b) => a.data.createdAt.localeCompare(b.data.createdAt))
+    .map((item) => ({
+      id: item.id,
+      role: item.data.role,
+      content: item.data.content,
+      sender: item.data.sender,
+    }));
+
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    // Push user message to chat feed
+    const payload: AiChatFeedMessage = {
+      type: "ai-chat",
+      role: "user",
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+      sender: self?.info
+        ? {
+            name: self.info.name,
+            avatar: self.info.avatar,
+          }
+        : undefined,
+    };
+
+    try {
+      await addFeedMessage(AI_CHAT_FEED_ID, payload);
+
+      // Trigger design agent
+      const response = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: trimmed, roomId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      setRunId(data.runId);
+      setPublicToken(data.publicToken);
+    } catch (err) {
+      console.error("Failed to trigger design agent:", err);
+      const errorPayload: AiChatFeedMessage = {
+        type: "ai-chat",
+        role: "assistant",
+        content: "Failed to start the design process. Please try again.",
+        createdAt: new Date().toISOString(),
+      };
+      addFeedMessage(AI_CHAT_FEED_ID, errorPayload).catch(console.error);
+    }
+  };
+
+  return children({
+    status: {
+      isActive: isPresenceActive || isFeedActive || isRunActive,
+      message: latestStatus,
+    },
+    chat: {
+      messages: chatMessages,
+      sendMessage,
+    },
+    runId,
+  });
 }
