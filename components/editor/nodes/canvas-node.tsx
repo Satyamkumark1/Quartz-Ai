@@ -31,7 +31,7 @@ export function CanvasNode({ id, data, selected, width = 120, height = 60 }: Can
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setEditLabel(data.label);
+    setTimeout(() => setEditLabel(data.label), 0);
   }, [data.label]);
 
   useEffect(() => {

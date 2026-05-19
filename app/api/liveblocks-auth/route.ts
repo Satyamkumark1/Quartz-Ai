@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     try {
       await liveblocks.getRoom(room);
-    } catch (e: any) {
+    } catch {
       // Room does not exist, create it
       await liveblocks.createRoom(room, {
         defaultAccesses: [],

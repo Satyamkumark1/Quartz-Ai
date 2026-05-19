@@ -19,6 +19,28 @@ const GenerateSpecSchema = z.object({
   edges: z.array(z.any()),
 });
 
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
+interface CanvasNode {
+  id: string;
+  data?: {
+    label?: string;
+    shape?: string;
+    color?: string;
+  };
+}
+
+interface CanvasEdge {
+  source: string;
+  target: string;
+  data?: {
+    label?: string;
+  };
+}
+
 export const generateSpec = task({
   id: "generate-spec",
   run: async (payload: unknown) => {
@@ -47,15 +69,15 @@ export const generateSpec = task({
           "Focus on the relationships between components and the intent expressed in the chat history.",
         ].join("\n"),
         prompt: JSON.stringify({
-          chatHistory: chatHistory.map((m: any) => ({ role: m.role, content: m.content })),
+          chatHistory: (chatHistory as ChatMessage[]).map((m) => ({ role: m.role, content: m.content })),
           canvas: {
-            nodes: nodes.map((n: any) => ({
+            nodes: (nodes as CanvasNode[]).map((n) => ({
               id: n.id,
               label: n.data?.label,
               shape: n.data?.shape,
               color: n.data?.color,
             })),
-            edges: edges.map((e: any) => ({
+            edges: (edges as CanvasEdge[]).map((e) => ({
               source: e.source,
               target: e.target,
               label: e.data?.label,

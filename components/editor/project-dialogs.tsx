@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useProjectDialogs, type Project } from "./project-context";
 import {
   Dialog,
@@ -24,7 +24,6 @@ function generateSlug(name: string) {
 
 function RenameDialogContent({
   project,
-  isOpen,
   onOpenChange,
 }: {
   project: Project;
@@ -33,14 +32,6 @@ function RenameDialogContent({
 }) {
   const [renameName, setRenameName] = useState(project.name);
   const { renameProject, isPending } = useProjectActions();
-
-  // Reset name when reopened
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRenameName(project.name);
-    }
-  }, [isOpen, project.name]);
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,12 +91,9 @@ export function ProjectDialogs() {
   const [createName, setCreateName] = useState("");
   
   // Calculate slug and ID only when dialog is open and name changes
-  const [createRoomId, setCreateRoomId] = useState("");
-  
-  useEffect(() => {
-    if (isCreateOpen) {
-      setCreateRoomId(generateRoomId(createName || "Untitled Project"));
-    }
+  const createRoomId = useMemo(() => {
+    if (!isCreateOpen) return "";
+    return generateRoomId(createName || "Untitled Project");
   }, [createName, isCreateOpen]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -168,6 +156,7 @@ export function ProjectDialogs() {
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
         {selectedProject && (
           <RenameDialogContent
+            key={`${selectedProject.id}-${isRenameOpen}`}
             project={selectedProject}
             isOpen={isRenameOpen}
             onOpenChange={setIsRenameOpen}

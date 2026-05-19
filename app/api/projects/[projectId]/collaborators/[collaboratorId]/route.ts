@@ -38,9 +38,9 @@ export async function DELETE(
     });
 
     return NextResponse.json(deletedCollaborator);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[COLLABORATORS_DELETE]", error);
-    if (error.code === "P2025") {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
       return new NextResponse("Collaborator not found", { status: 404 });
     }
     return new NextResponse("Internal Error", { status: 500 });

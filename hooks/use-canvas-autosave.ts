@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useCanvasAutosave({ projectId, nodes, edges }: { projectId: string; nodes: any[]; edges: any[] }) {
+export function useCanvasAutosave({ projectId, nodes, edges }: { projectId: string; nodes: unknown[]; edges: unknown[] }) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const timeout = useRef<NodeJS.Timeout | null>(null);
   const lastSaved = useRef<string>("");

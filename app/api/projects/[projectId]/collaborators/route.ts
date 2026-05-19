@@ -116,9 +116,9 @@ export async function POST(
     });
 
     return NextResponse.json(collaborator);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[COLLABORATORS_POST]", error);
-    if (error.code === "P2002") {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
       return new NextResponse("User is already a collaborator", { status: 400 });
     }
     return new NextResponse("Internal Error", { status: 500 });

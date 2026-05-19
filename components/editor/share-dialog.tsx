@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Copy, Check, Trash2, Mail, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,16 +40,7 @@ export function ShareDialog({ isOpen, onClose, projectId, isOwner }: ShareDialog
 
   const projectUrl = typeof window !== "undefined" ? `${window.location.origin}/editor/${projectId}` : "";
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCollaborators();
-    } else {
-      setEmail("");
-      setError(null);
-    }
-  }, [isOpen, projectId]);
-
-  const fetchCollaborators = async () => {
+  const fetchCollaborators = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -57,13 +48,22 @@ export function ShareDialog({ isOpen, onClose, projectId, isOwner }: ShareDialog
       if (!res.ok) throw new Error("Failed to load collaborators");
       const data = await res.json();
       setCollaborators(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong.");
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCollaborators();
+    } else {
+      setEmail("");
+      setError(null);
+    }
+  }, [isOpen, fetchCollaborators]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(projectUrl);
@@ -91,8 +91,8 @@ export function ShareDialog({ isOpen, onClose, projectId, isOwner }: ShareDialog
 
       setEmail("");
       await fetchCollaborators();
-    } catch (err: any) {
-      setError(err.message || "Failed to invite collaborator");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to invite collaborator");
     } finally {
       setIsInviting(false);
     }
@@ -113,8 +113,8 @@ export function ShareDialog({ isOpen, onClose, projectId, isOwner }: ShareDialog
       }
 
       setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
-    } catch (err: any) {
-      setError(err.message || "Failed to remove collaborator");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove collaborator");
     } finally {
       setRemovingId(null);
     }
