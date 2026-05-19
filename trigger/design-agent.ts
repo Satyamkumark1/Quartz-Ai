@@ -4,8 +4,12 @@ import { task } from "@trigger.dev/sdk";
 import { generateText } from "ai";
 import type { Edge, Node } from "@xyflow/react";
 import { liveblocks } from "@/lib/liveblocks";
+import { jsonrepair } from "jsonrepair";
 import {
   AI_STATUS_FEED_ID,
+  AI_CHAT_FEED_ID,
+  isAiStatusFeedMessage,
+  isAiChatFeedMessage,
   type AiStatusFeedMessage,
   type AiStatusState,
 } from "@/types/tasks";
@@ -90,7 +94,7 @@ export const designAgent = task({
   run: async (payload: DesignAgentPayload) => {
     await ensureRoom(payload.roomId);
     await safeSetAiPresence(payload.roomId, true, "Starting design generation");
-    await publishStatus(payload.roomId, "Ghost AI started designing.", "started");
+    await publishStatus(payload.roomId, "Quartz-Ai started designing.", "started");
 
     try {
       await publishStatus(payload.roomId, "Reading the current canvas.", "processing");
@@ -151,7 +155,7 @@ async function createDesignPlan(
   snapshot: { nodes: readonly CanvasNode[]; edges: readonly CanvasEdge[] }
 ) {
   const model = openrouter(
-    process.env.OPENROUTER_MODEL ?? "google/gemini-2.5-flash"
+    process.env.OPENROUTER_MODEL ?? "google/gemini-2.0-flash-001"
   );
 
   const { text } = await generateText({
@@ -160,7 +164,7 @@ async function createDesignPlan(
     temperature: 0.2,
     maxRetries: 1,
     system: [
-      "You are Ghost AI, a system architecture diagram agent.",
+      "You are Quartz-Ai, a system architecture diagram agent.",
       "Return only valid JSON. Do not wrap it in Markdown.",
       "The JSON must be an object with optional string summary and actions array.",
       "Each action must use one of these type values: add_node, move_node, resize_node, update_node_data, delete_node, add_edge, delete_edge.",
@@ -212,7 +216,19 @@ function getMaxOutputTokens() {
 }
 
 function parseDesignPlanJson(text: string): DesignPlan {
-  const parsed = JSON.parse(extractJsonObject(text)) as unknown;
+  const extracted = extractJsonObject(text);
+  let parsed: unknown;
+  
+  try {
+    parsed = JSON.parse(extracted);
+  } catch (e) {
+    try {
+      parsed = JSON.parse(jsonrepair(extracted));
+    } catch (repairError) {
+      throw new Error(`Design plan response was not valid JSON even after repair: ${repairError instanceof Error ? repairError.message : "unknown error"}`);
+    }
+  }
+
   if (!isRecord(parsed)) {
     throw new Error("Design plan response was not a JSON object.");
   }
@@ -531,7 +547,7 @@ async function setAiPresence(
       status,
     },
     userInfo: {
-      name: "Ghost AI",
+      name: "Quartz-Ai",
       color: "#62C073",
     },
     ttl: thinking ? 120 : 2,

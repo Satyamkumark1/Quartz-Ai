@@ -6,7 +6,11 @@ import { put, get } from "@vercel/blob";
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
   const canvas = await req.json();
-  const blob = await put(`canvas-${projectId}.json`, JSON.stringify(canvas), { access: "public" });
+  const blob = await put(`canvas-${projectId}.json`, JSON.stringify(canvas), { 
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  });
   await prisma.project.update({
     where: { id: projectId },
     data: { canvasJsonPath: blob.url },

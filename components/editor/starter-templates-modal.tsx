@@ -116,10 +116,10 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
 export function StarterTemplatesModal({ isOpen, onClose, onImport }: StarterTemplatesModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[85vh] flex flex-col bg-[#0a0a0a] border-zinc-800 text-zinc-100 p-0">
-        <DialogHeader className="p-6 pb-4 border-b border-zinc-800 shrink-0">
-          <DialogTitle className="text-xl">Starter Templates</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+      <DialogContent className="sm:max-w-[800px] max-h-[85vh] flex flex-col bg-card/80 backdrop-blur-2xl border-border text-foreground p-0 shadow-2xl rounded-2xl overflow-hidden">
+        <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-background/40">
+          <DialogTitle className="text-xl font-semibold tracking-tight">Starter Templates</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Choose a template to quickly start your diagram. This will replace your current canvas.
           </DialogDescription>
         </DialogHeader>
@@ -129,16 +129,16 @@ export function StarterTemplatesModal({ isOpen, onClose, onImport }: StarterTemp
             {CANVAS_TEMPLATES.map((template) => (
               <div 
                 key={template.id}
-                className="flex flex-col bg-[#121214] border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors"
+                className="flex flex-col bg-background/60 border border-border rounded-xl overflow-hidden hover:border-primary/40 hover:bg-white/[0.02] hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] transition-all duration-300 group"
               >
-                <div className="h-40 bg-[#0f0f11] border-b border-zinc-800/50 p-4 flex items-center justify-center relative overflow-hidden">
+                <div className="h-40 bg-black/40 border-b border-border p-4 flex items-center justify-center relative overflow-hidden">
                   <TemplatePreview template={template} />
                 </div>
-                <div className="p-4 flex flex-col flex-1">
-                  <h3 className="font-semibold text-zinc-100 mb-1">{template.name}</h3>
-                  <p className="text-sm text-zinc-400 mb-4 flex-1">{template.description}</p>
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-semibold text-foreground mb-1.5 tracking-tight">{template.name}</h3>
+                  <p className="text-[13px] text-muted-foreground mb-5 flex-1 leading-relaxed">{template.description}</p>
                   <Button 
-                    className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900" 
+                    className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 hover:border-primary font-medium transition-all duration-300 rounded-xl shadow-sm" 
                     onClick={() => onImport(template)}
                   >
                     Import Template

@@ -7,6 +7,7 @@ import { ProjectDialogsProvider, Project } from "./project-context";
 import { ProjectDialogs } from "./project-dialogs";
 import { AiSidebar } from "./ai-sidebar";
 import { LiveblocksProvider, RoomProvider } from "@liveblocks/react";
+import { ReactFlowProvider } from "@xyflow/react";
 
 interface EditorLayoutProps {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ export function EditorLayout({ children, projects, projectName, currentRoomId, i
   const closeAiSidebar = () => setIsAiSidebarOpen(false);
 
   const workspace = (
-    <>
+    <ReactFlowProvider>
       <main className="flex-1 w-full overflow-hidden flex">
         {children}
       </main>
@@ -34,7 +35,7 @@ export function EditorLayout({ children, projects, projectName, currentRoomId, i
         hasRoom={Boolean(currentRoomId)}
         roomId={currentRoomId}
       />
-    </>
+    </ReactFlowProvider>
   );
 
   return (
