@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PanelLeft, Share, Sparkles, Link2, Square } from "lucide-react";
+import { PanelLeft, Share, Sparkles, Link2, Square, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@clerk/nextjs";
 import { ShareDialog } from "./share-dialog";
@@ -50,6 +50,15 @@ export function EditorNavbar({ isSidebarOpen, toggleSidebar, projectName, projec
             >
               <Share className="h-4 w-4" />
               Share
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex gap-2 h-8 border-border bg-background"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-templates-modal'))}
+            >
+              <LayoutTemplate className="h-4 w-4" />
+              Templates
             </Button>
             <Button size="sm" className="hidden sm:flex gap-2 h-8 bg-cyan-400 hover:bg-cyan-500 text-black font-medium">
               <Sparkles className="h-4 w-4" />

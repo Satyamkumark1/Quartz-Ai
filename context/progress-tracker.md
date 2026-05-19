@@ -5,14 +5,16 @@ change.
 
 ## Current Phase
 
-- Backend API Routes
+- Collaborative Canvas
 
 ## Current Goal
 
-- Implement Shape Panel per `12-shape-panel.md`
+- Next specification
 
 ## Completed
 
+- Implement node editing per `14-node-editing.md`
+- Implement node color toolbar per `15-nodes-color-toolbar.md`
 - Install and configure shadcn/ui
 - Add shadcn components: Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea
 - Verify theme matching in `globals.css` (Forced default to dark mode)
@@ -42,6 +44,10 @@ change.
 - Set up Liveblocks integration (`10-liveblocks-setup.md`)
 - Set up Editor canvas
 - Implement Shape Panel (`12-shape-panel.md`)
+  - Implement node shape styling and drag previews (`13-node-shape.md`)
+- Implement custom edge behavior and inline labels per `16-edge-behavior.md`
+- Add zoom/undo canvas control bar and keyboard shortcuts per `17-canvas-ergonomics.md`
+- Implement starter templates library and import modal per `18-starter-template.md`
 
 ## In Progress 
 

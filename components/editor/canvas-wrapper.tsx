@@ -3,7 +3,6 @@
 import React, { Component, ReactNode } from "react";
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react";
 import { CanvasFlow } from "./canvas-flow";
-import { ShapePanel } from "./shape-panel";
 import { Loader2, AlertCircle } from "lucide-react";
 
 interface ErrorBoundaryProps {
@@ -39,10 +38,7 @@ export function CanvasWrapper({ roomId }: { roomId: string }) {
       <RoomProvider id={roomId} initialPresence={{ cursor: null, isThinking: false }}>
         <ErrorBoundary fallback={<CanvasError />}>
           <ClientSideSuspense fallback={<CanvasLoading />}>
-            <>
-              <CanvasFlow />
-              <ShapePanel />
-            </>
+            <CanvasFlow />
           </ClientSideSuspense>
         </ErrorBoundary>
       </RoomProvider>

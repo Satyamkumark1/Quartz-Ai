@@ -1,15 +1,27 @@
 "use client";
 
-import { useCallback } from "react";
-import { ReactFlow, Background, BackgroundVariant, MiniMap, ConnectionMode, useReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { useCallback, useState, useEffect } from "react";
+import { ReactFlow, Background, BackgroundVariant, ConnectionMode, useReactFlow, ReactFlowProvider, Panel } from "@xyflow/react";
 import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow";
+import { useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { CanvasNode } from "./nodes/canvas-node";
+import { ShapePanel } from "./shape-panel";
+import { Button } from "@/components/ui/button";
+import { ZoomIn, ZoomOut, Maximize, Undo2, Redo2 } from "lucide-react";
+import { CanvasEdge } from "./edges/canvas-edge";
+import { StarterTemplatesModal } from "./starter-templates-modal";
+import { CanvasTemplate } from "./starter-templates";
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-ui/styles.css";
 import "@liveblocks/react-flow/styles.css";
 
 const nodeTypes = {
   canvasNode: CanvasNode,
+};
+
+const edgeTypes = {
+  canvasEdge: CanvasEdge,
 };
 
 function Flow() {
@@ -24,7 +36,36 @@ function Flow() {
       },
     });
 
-  const { screenToFlowPosition, setNodes } = useReactFlow();
+  const reactFlowInstance = useReactFlow();
+  const { screenToFlowPosition, setNodes, setEdges } = reactFlowInstance;
+
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenTemplates = () => setIsTemplatesOpen(true);
+    window.addEventListener("open-templates-modal", handleOpenTemplates);
+    return () => window.removeEventListener("open-templates-modal", handleOpenTemplates);
+  }, []);
+
+  const handleImport = useCallback((template: CanvasTemplate) => {
+    setNodes(template.nodes);
+    setEdges(template.edges);
+    setIsTemplatesOpen(false);
+    setTimeout(() => {
+      reactFlowInstance.fitView({ duration: 500, padding: 0.2 });
+    }, 100);
+  }, [setNodes, setEdges, reactFlowInstance]);
+
+  const undo = useUndo();
+  const redo = useRedo();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
+
+  useKeyboardShortcuts({
+    reactFlowInstance,
+    undo,
+    redo,
+  });
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -80,6 +121,7 @@ function Flow() {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -87,6 +129,9 @@ function Flow() {
         onDragOver={onDragOver}
         onDrop={onDrop}
         connectionMode={ConnectionMode.Loose}
+        defaultEdgeOptions={{
+          type: "canvasEdge",
+        }}
         fitView
         panOnScroll={true}
         zoomOnScroll={false}
@@ -94,14 +139,82 @@ function Flow() {
         minZoom={0.1}
         maxZoom={2}
       >
+        <svg style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0 }}>
+          <defs>
+            <marker id="arrow-default" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#52525b" />
+            </marker>
+            <marker id="arrow-hovered" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#a1a1aa" />
+            </marker>
+            <marker id="arrow-selected" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4" />
+            </marker>
+          </defs>
+        </svg>
         <Background variant={BackgroundVariant.Dots} color="#ffffff30" />
-        <MiniMap 
-          nodeColor="#ffffff20"
-          maskColor="#00000080"
-          style={{ backgroundColor: '#0f0f11', border: '1px solid #ffffff10', borderRadius: '8px' }}
-        />
         <Cursors />
+        <Panel position="bottom-left" className="mb-6 ml-6">
+          <div className="flex items-center gap-1 p-1 bg-[#18181b] border border-white/10 rounded-full shadow-lg">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                onClick={() => reactFlowInstance.zoomOut({ duration: 200 })}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                onClick={() => reactFlowInstance.fitView({ duration: 200 })}
+              >
+                <Maximize className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                onClick={() => reactFlowInstance.zoomIn({ duration: 200 })}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="w-px h-4 bg-white/10 mx-1" />
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10 disabled:opacity-50"
+                onClick={undo}
+                disabled={!canUndo}
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10 disabled:opacity-50"
+                onClick={redo}
+                disabled={!canRedo}
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </Panel>
+        <Panel position="bottom-center" className="mb-6">
+          <ShapePanel />
+        </Panel>
       </ReactFlow>
+      
+      <StarterTemplatesModal 
+        isOpen={isTemplatesOpen} 
+        onClose={() => setIsTemplatesOpen(false)} 
+        onImport={handleImport} 
+      />
     </div>
   );
 }
