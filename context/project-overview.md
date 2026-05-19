@@ -1,8 +1,8 @@
-# Ghost AI
+# Quartz-Ai
 
 ## Overview
 
-Ghost AI is a real-time collaborative system design workspace, where users describe a system in natural language, an AI agent maps that system on the shared canvas, collaborators refine the architecture, and the app generates a technical specification from the resulting graph.
+Quartz-Ai is a real-time collaborative system design workspace, where users describe a system in natural language, an AI agent maps that system on the shared canvas, collaborators refine the architecture, and the app generates a technical specification from the resulting graph.
 
 ## Goals
 

@@ -9,7 +9,7 @@ change.
 
 ## Current Goal
 
-- AI presence state UI
+- AI spec generation frontend
 
 ## Completed
 
@@ -65,7 +65,7 @@ change.
   - Use OpenRouter through the AI SDK to produce structured canvas actions
   - Apply add/move/resize/update/delete node and edge actions through Liveblocks React Flow `mutateFlow`
   - Publish AI progress messages to the room-scoped `ai-status-feed`
-  - Set ephemeral `Ghost AI` Liveblocks presence while generation runs
+  - Set ephemeral `Quartz-Ai` Liveblocks presence while generation runs
   - Handle task errors by publishing failure status and clearing AI presence
   - Verify `npm run build` passes
 - Fix design agent presence startup failure
@@ -103,6 +103,16 @@ change.
   - Add compact status strip with pulsing indicator above input
   - Reflect AI-driven canvas updates through Liveblocks automatically
   - Verify `npm run build` passes
+- Implement spec generation flow per `27-spec-generation-flow.md`
+  - Create `trigger/generate-spec.ts` with Zod validation and Gemini (`@ai-sdk/google`)
+  - Add `POST /api/ai/spec` to trigger the task and track run ownership
+  - Add `POST /api/ai/spec/token` to issue run-scoped public tokens
+  - Verify `npm run build` passes
+- Implement spec persistence and download per `28-spec-persistence-download.md`
+  - Add `ProjectSpec` Prisma model for metadata
+  - Update `generate-spec` task to upload Markdown to Vercel Blob and save to Prisma
+  - Create secure `GET /api/projects/[projectId]/specs/[specId]/download` route
+  - Verify `npm run build` passes
 
 ## In Progress 
 
@@ -110,7 +120,8 @@ change.
 
 ## Next Up
 
-- Implement spec generation flow per `27-spec-generation-flow.md`
+- 
+
 
 ## Open Questions
 

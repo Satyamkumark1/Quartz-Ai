@@ -152,7 +152,8 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onDelete={onDelete}
+        onNodesDelete={(deletedNodes) => onDelete({ nodes: deletedNodes, edges: [] })}
+        onEdgesDelete={(deletedEdges) => onDelete({ nodes: [], edges: deletedEdges })}
         onDragOver={onDragOver}
         onDrop={onDrop}
         connectionMode={ConnectionMode.Loose}
@@ -182,12 +183,12 @@ function Flow() {
         <Background variant={BackgroundVariant.Dots} color="#ffffff30" />
         <Cursors components={{ Cursor: CursorWithThinking }} />
         <Panel position="bottom-left" className="mb-6 ml-6">
-          <div className="flex items-center gap-1 p-1 bg-[#18181b] border border-white/10 rounded-full shadow-lg">
+          <div className="flex items-center gap-1.5 p-1.5 bg-card/80 border border-border rounded-full shadow-2xl backdrop-blur-xl">
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-cyan-400 hover:bg-white/[0.04] transition-colors"
                 onClick={() => reactFlowInstance.zoomOut({ duration: 200 })}
               >
                 <ZoomOut className="h-4 w-4" />
@@ -195,7 +196,7 @@ function Flow() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-cyan-400 hover:bg-white/[0.04] transition-colors"
                 onClick={() => reactFlowInstance.fitView({ duration: 200 })}
               >
                 <Maximize className="h-4 w-4" />
@@ -203,18 +204,18 @@ function Flow() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-cyan-400 hover:bg-white/[0.04] transition-colors"
                 onClick={() => reactFlowInstance.zoomIn({ duration: 200 })}
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
-            <div className="w-px h-4 bg-white/10 mx-1" />
+            <div className="w-px h-5 bg-border mx-1" />
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10 disabled:opacity-50"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-cyan-400 hover:bg-white/[0.04] disabled:opacity-50 transition-colors"
                 onClick={undo}
                 disabled={!canUndo}
               >
@@ -223,15 +224,15 @@ function Flow() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-100 hover:bg-white/10 disabled:opacity-50"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-cyan-400 hover:bg-white/[0.04] disabled:opacity-50 transition-colors"
                 onClick={redo}
                 disabled={!canRedo}
               >
                 <Redo2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="w-px h-4 bg-white/10 mx-1" />
-            <div className="flex items-center text-xs text-zinc-400 min-w-15 justify-center">
+            <div className="w-px h-5 bg-border mx-1" />
+            <div className="flex items-center text-xs text-muted-foreground font-medium min-w-16 justify-center pr-2">
               {saveStatus === "saving" && "Saving..."}
               {saveStatus === "saved" && "Saved"}
               {saveStatus === "error" && <span className="text-red-400">Error</span>}
@@ -253,9 +254,5 @@ function Flow() {
 }
 
 export function CanvasFlow() {
-  return (
-    <ReactFlowProvider>
-      <Flow />
-    </ReactFlowProvider>
-  );
+  return <Flow />;
 }

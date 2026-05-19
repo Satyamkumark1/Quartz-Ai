@@ -3,6 +3,8 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { withAccelerate } from '@prisma/extension-accelerate'
 
+import { parse } from 'pg-connection-string'
+
 const connectionString = `${process.env.DATABASE_URL}`
 
 const prismaClientSingleton = () => {
@@ -11,7 +13,12 @@ const prismaClientSingleton = () => {
       return new PrismaClient({ accelerateUrl: connectionString })
     }
     
-    const pool = new Pool({ connectionString })
+    const config = parse(connectionString)
+    // Explicitly set SSL to avoid the pg-connection-string warning
+    // verify-full corresponds to rejectUnauthorized: true
+    config.ssl = { rejectUnauthorized: true }
+    
+    const pool = new Pool(config)
     const adapter = new PrismaPg(pool)
     return new PrismaClient({ adapter })
   })()

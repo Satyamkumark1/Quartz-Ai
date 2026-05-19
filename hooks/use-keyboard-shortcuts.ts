@@ -49,9 +49,23 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      if (event.key === "-") {
+      if (event.key === "-" ) {
         event.preventDefault();
         reactFlowInstance.zoomOut({ duration: 200 });
+        return;
+      }
+
+      if (event.key === "Delete" || event.key === "Backspace") {
+        const selectedNodes = reactFlowInstance.getNodes().filter((n) => n.selected);
+        const selectedEdges = reactFlowInstance.getEdges().filter((e) => e.selected);
+
+        if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+          event.preventDefault();
+          reactFlowInstance.deleteElements({
+            nodes: selectedNodes,
+            edges: selectedEdges,
+          });
+        }
         return;
       }
     };
