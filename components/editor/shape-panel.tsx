@@ -28,7 +28,7 @@ function ShapePreview({ shape, width, height }: { shape: string; width: number; 
         return <polygon points={`${width / 2},${inset} ${width - inset},${height / 2} ${width / 2},${height - inset} ${inset},${height / 2}`} {...commonProps} />;
       case "hexagon":
         return <polygon points={`${width * 0.25},${inset} ${width * 0.75},${inset} ${width - inset},${height / 2} ${width * 0.75},${height - inset} ${width * 0.25},${height - inset} ${inset},${height / 2}`} {...commonProps} />;
-      case "cylinder":
+      case "cylinder": {
         const ry = height * 0.15;
         const rx = width / 2 - inset;
         return (
@@ -37,6 +37,7 @@ function ShapePreview({ shape, width, height }: { shape: string; width: number; 
             <ellipse cx={width / 2} cy={ry + inset} rx={rx} ry={ry} {...commonProps} />
           </>
         );
+      }
       default:
         return null;
     }

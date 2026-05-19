@@ -47,6 +47,7 @@ export function CanvasEdge({
 
   const onEdgeDoubleClick = (evt: React.MouseEvent) => {
     evt.stopPropagation();
+    setEditLabel(label);
     setIsEditing(true);
   };
 
@@ -68,8 +69,8 @@ export function CanvasEdge({
       submitLabel();
     }
     if (e.key === 'Escape') {
-      setIsEditing(false);
-      setEditLabel(label);
+      e.preventDefault();
+      submitLabel();
     }
   };
 
