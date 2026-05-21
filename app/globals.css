@@ -381,3 +381,152 @@
 .animate-pulse-glow {
   animation: pulseGlow 2.5s infinite;
 }
+
+/* =========================================
+   CLERK AUTH UI OVERRIDES (HIGH SPECIFICITY)
+========================================= */
+
+/* Main Containers */
+body .cl-card,
+body .cl-userButtonPopoverCard,
+body .cl-userProfile-root {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  color: var(--foreground) !important;
+}
+
+/* User Profile Modal layout adjustments */
+body .cl-userProfile-root {
+  border-radius: var(--radius) !important;
+  overflow: hidden !important;
+}
+
+/* Text elements */
+body .cl-headerTitle,
+body .cl-profileSectionTitle,
+body .cl-profileSectionHeader,
+body .cl-userPreviewMainIdentifier,
+body .cl-userPreviewMainIdentifier *,
+body .cl-navbarButtonText,
+body .cl-formFieldLabel,
+body .cl-identityPreviewText,
+body .cl-breadcrumbsItemText,
+body .cl-breadcrumbsItemText *,
+body .cl-socialButtonsBlockButtonText {
+  color: var(--foreground) !important;
+}
+
+body .cl-headerSubtitle,
+body .cl-dividerText,
+body .cl-footerActionText,
+body .cl-userPreviewSecondaryIdentifier,
+body .cl-userPreviewSecondaryIdentifier *,
+body .cl-navbarButtonIcon,
+body .cl-formFieldHintText,
+body .cl-fileDropzoneText {
+  color: var(--muted-foreground) !important;
+}
+
+/* Links and buttons */
+body .cl-footerActionLink,
+body .cl-footerActionLink:hover {
+  color: var(--primary) !important;
+}
+
+/* Navbar buttons in UserProfile modal */
+body .cl-navbarButton,
+body .cl-navbarButton * {
+  color: var(--foreground) !important;
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease !important;
+}
+body .cl-navbarButton {
+  opacity: 0.8 !important;
+}
+body .cl-navbarButton:hover {
+  opacity: 1 !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+body .cl-navbarButton:hover,
+body .cl-navbarButton:hover * {
+  color: #ffffff !important;
+}
+body .cl-navbarButton[data-active="true"] {
+  background-color: rgba(34, 211, 238, 0.1) !important;
+}
+body .cl-navbarButton[data-active="true"],
+body .cl-navbarButton[data-active="true"] * {
+  color: var(--primary) !important;
+}
+
+/* Action button items in popovers (Manage account, Sign out, etc.) */
+body .cl-userButtonPopoverActionButton,
+body .cl-userButtonPopoverActionButton * {
+  color: var(--foreground) !important;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+body .cl-userButtonPopoverActionButton {
+  background-color: transparent !important;
+}
+body .cl-userButtonPopoverActionButton:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+body .cl-userButtonPopoverActionButton:hover,
+body .cl-userButtonPopoverActionButton:hover * {
+  color: #ffffff !important;
+}
+
+/* Form controls overrides */
+body .cl-formFieldInput {
+  background-color: var(--input) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+body .cl-formFieldInput:focus {
+  border-color: rgba(34, 211, 238, 0.5) !important;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25) !important;
+}
+
+/* Social Buttons */
+body .cl-socialButtonsBlockButton {
+  background-color: var(--input) !important;
+  border: 1px solid var(--border) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+body .cl-socialButtonsBlockButton:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
+
+/* Divider lines */
+body .cl-dividerLine {
+  background-color: var(--border) !important;
+}
+
+/* Sidebar and Navbar in UserProfile */
+body .cl-navbar {
+  border-right: 1px solid var(--border) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
+}
+body .cl-page {
+  background-color: transparent !important;
+}
+
+/* User Profile Form blocks */
+body .cl-profileSection {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* Badges */
+body .cl-badge {
+  background-color: rgba(34, 211, 238, 0.1) !important;
+  color: var(--primary) !important;
+  border: 1px solid rgba(34, 211, 238, 0.2) !important;
+}
+
+/* Modal and popup dialog layout */
+body .cl-modalBackdrop {
+  backdrop-filter: blur(8px) !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}

@@ -13,8 +13,20 @@ export const NODE_COLOR_PALETTE = [
 export type CanvasNodeData = {
   label: string;
   color?: string;
-  shape?: 'rectangle' | 'circle' | 'diamond' | 'cylinder' | 'pill' | 'hexagon' | 'text';
+  shape?: 'rectangle' | 'circle' | 'diamond' | 'cylinder' | 'pill' | 'hexagon' | 'text' | 'triangle' | 'star' | 'parallelogram' | 'arrow' | 'group' | 'custom';
+  borderStyle?: 'solid' | 'dashed' | 'dotted';
+  opacity?: number;
+  shadow?: 'none' | 'sm' | 'md' | 'lg';
+  icon?: string;
 };
 
 export type CanvasNode = Node<CanvasNodeData, 'canvasNode'>;
-export type CanvasEdge = Edge;
+
+export type CanvasEdgeData = {
+  label?: string;
+  style?: 'solid' | 'dashed' | 'dotted';
+  type?: 'smoothstep' | 'straight' | 'bezier';
+};
+
+export type CanvasEdge = Edge<CanvasEdgeData>;
+

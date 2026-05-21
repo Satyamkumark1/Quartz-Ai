@@ -113,6 +113,30 @@ change.
   - Update `generate-spec` task to upload Markdown to Vercel Blob and save to Prisma
   - Create secure `GET /api/projects/[projectId]/specs/[specId]/download` route
   - Verify `npm run build` passes
+- Implement Spec UI Integration
+  - Create project spec list route `GET /api/projects/[projectId]/specs/route.ts`
+  - Render list of generated specifications under the "Specs" tab in `ai-sidebar.tsx`
+  - Implement dynamic refetch on background task completion using `onStatusComplete` in `AiSidebarRoomState`
+  - Add markdown preview dialog with lightweight custom renderer `SimpleMarkdown`
+  - Support spec downloading from both list card and preview modal
+- Implement Collaborator Presence Avatars
+  - Add `PresenceAvatars` component reading active user presence via `useOthers()`
+  - Integrate presence avatar panel in top-right area of React Flow canvas
+  - Verify styling and event safety (avatars stack doesn't block canvas clicks)
+- Expand Collaborative Canvas features per `30-canvas-feature-expansion.md`
+  - Installed and integrated `html-to-image` for canvas image exports (PNG, SVG).
+  - Added advanced shapes (Triangle, Star, Parallelogram, Block Arrow, Custom icon node, Group Container).
+  - Implemented full shape customization: background colors, border styles (solid, dashed, dotted), opacity (25%, 50%, 75%, 100%), shadows (none, soft, medium, hard).
+  - Added layer/zIndex management (Bring to Front, Send to Back) on right-click context menu and toolbar.
+  - Implemented customizable connectors: routing styles (Straight, Bezier, Step), line style patterns (solid, dashed, dotted), and dynamic inline config toolbar.
+  - Implemented Snap-to-grid toggle ergonomic action in the bottom-left panel.
+  - Added floating alignment (Align Left, Center, Right, Top, Middle, Bottom) and group/ungroup containers.
+  - Added import and export utilities for JSON representation of the canvas graphs.
+  - Supported context menus on right-clicking nodes, edges, and pane.
+  - Refactored layout controls: Zoom/History/Grid on bottom-left, Import/Export/Saved status on bottom-right, basic shapes in a left-aligned vertical sidebar, and containers/special/text shapes in a bottom-center horizontal bar to prevent overlap and match standard diagramming interfaces.
+  - Fixed Clerk authentication UI readability issues (low contrast text and icons on dark backgrounds in UserButton popover, UserProfile modal, and Sign-in/Sign-up cards) by updating config to use Clerk v7 CSS variables, adding fallback variables for compatibility, setting `cssLayerName="clerk"` to prevent CSS conflicts, and applying body-prepended, high-specificity global CSS overrides targeting action buttons, nav items, and their descendant elements.
+
+
 
 ## In Progress 
 

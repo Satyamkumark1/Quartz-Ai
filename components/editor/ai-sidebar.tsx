@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent, type ReactNode } from "react";
+import { useState, useRef, useEffect, KeyboardEvent, useCallback, type ReactNode } from "react";
 import { Bot, X, Send, FileText, Download, Sparkles, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRealtimeRun } from "@trigger.dev/react-hooks";
 import type { designAgent } from "@/trigger/design-agent";
 import {
@@ -25,7 +26,12 @@ import {
   isAiChatFeedMessage,
   type AiStatusFeedMessage,
   type AiChatFeedMessage,
-} from "@/types/tasks";
+} from "@/types/tasks";interface ProjectSpec {
+  id: string;
+  projectId: string;
+  filePath: string;
+  createdAt: string;
+}
 
 interface Message {
   id: string;
@@ -76,6 +82,58 @@ export function AiSidebar({ isOpen, onClose, hasRoom = false, roomId }: AiSideba
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fallbackStatus: AiStatusState = { isActive: false, message: null };
+
+  const [specs, setSpecs] = useState<ProjectSpec[]>([]);
+  const [isLoadingSpecs, setIsLoadingSpecs] = useState(false);
+  const [selectedSpec, setSelectedSpec] = useState<ProjectSpec | null>(null);
+  const [specContent, setSpecContent] = useState<string | null>(null);
+  const [isLoadingSpecContent, setIsLoadingSpecContent] = useState(false);
+
+  const fetchSpecs = useCallback(async () => {
+    if (!roomId) return;
+    setIsLoadingSpecs(true);
+    try {
+      const response = await fetch(`/api/projects/${roomId}/specs`);
+      if (response.ok) {
+        const data = await response.json();
+        setSpecs(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch specs:", err);
+    } finally {
+      setIsLoadingSpecs(false);
+    }
+  }, [roomId]);
+
+  const handleSelectSpec = async (spec: ProjectSpec) => {
+    setSelectedSpec(spec);
+    setIsLoadingSpecContent(true);
+    setSpecContent(null);
+    try {
+      const response = await fetch(`/api/projects/${roomId}/specs/${spec.id}/download`);
+      if (response.ok) {
+        const text = await response.text();
+        setSpecContent(text);
+      } else {
+        setSpecContent("Failed to load specification content.");
+      }
+    } catch (err) {
+      console.error("Error fetching spec content:", err);
+      setSpecContent("Error loading specification content.");
+    } finally {
+      setIsLoadingSpecContent(false);
+    }
+  };
+
+  const handleDownloadSpec = (spec: ProjectSpec) => {
+    window.open(`/api/projects/${roomId}/specs/${spec.id}/download`, "_blank");
+  };
+
+  useEffect(() => {
+    if (isOpen && roomId) {
+      fetchSpecs();
+    }
+  }, [isOpen, roomId, fetchSpecs]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -226,91 +284,120 @@ export function AiSidebar({ isOpen, onClose, hasRoom = false, roomId }: AiSideba
             </TabsTrigger>
           </TabsList>
 
-          {/* AI Architect Tab */}
+          {/* AI Architect & Specs Tabs */}
           {hasRoom && roomId ? (
-            <AiSidebarRoomState roomId={roomId}>
+            <AiSidebarRoomState roomId={roomId} onStatusComplete={fetchSpecs}>
               {(roomContext) => (
-                <ArchitectTabContent
-                  roomContext={roomContext}
-                  hasRoom={hasRoom}
-                  localMessages={localMessages}
-                  input={input}
-                  setInput={setInput}
-                  handleKeyDown={handleKeyDown}
-                  handleSendMessage={handleSendMessage}
-                  handleGenerateSpec={handleGenerateSpec}
-                  isSpecPending={isSpecPending}
-                />
+                <>
+                  <ArchitectTabContent
+                    roomContext={roomContext}
+                    hasRoom={hasRoom}
+                    localMessages={localMessages}
+                    input={input}
+                    setInput={setInput}
+                    handleKeyDown={handleKeyDown}
+                    handleSendMessage={handleSendMessage}
+                    handleGenerateSpec={handleGenerateSpec}
+                    isSpecPending={isSpecPending}
+                  />
+                  <SpecsTabContent
+                    roomContext={roomContext}
+                    hasRoom={hasRoom}
+                    roomId={roomId}
+                    isSpecPending={isSpecPending}
+                    handleGenerateSpec={handleGenerateSpec}
+                    specs={specs}
+                    isLoadingSpecs={isLoadingSpecs}
+                    onSelectSpec={handleSelectSpec}
+                  />
+                </>
               )}
             </AiSidebarRoomState>
           ) : (
-            <ArchitectTabContent
-              roomContext={localRoomContext}
-              hasRoom={hasRoom}
-              localMessages={localMessages}
-              input={input}
-              setInput={setInput}
-              handleKeyDown={handleKeyDown}
-              handleSendMessage={handleSendMessage}
-              handleGenerateSpec={handleGenerateSpec}
-              isSpecPending={isSpecPending}
-            />
+            <>
+              <ArchitectTabContent
+                roomContext={localRoomContext}
+                hasRoom={hasRoom}
+                localMessages={localMessages}
+                input={input}
+                setInput={setInput}
+                handleKeyDown={handleKeyDown}
+                handleSendMessage={handleSendMessage}
+                handleGenerateSpec={handleGenerateSpec}
+                isSpecPending={isSpecPending}
+              />
+              <SpecsTabContent
+                roomContext={localRoomContext}
+                hasRoom={hasRoom}
+                roomId={roomId}
+                isSpecPending={isSpecPending}
+                handleGenerateSpec={handleGenerateSpec}
+                specs={specs}
+                isLoadingSpecs={isLoadingSpecs}
+                onSelectSpec={handleSelectSpec}
+              />
+            </>
           )}
-
-          {/* Specs Tab */}
-          <TabsContent value="specs" className="flex flex-col flex-1 min-h-0 mt-3">
-            <div className="flex flex-col gap-5 px-5 pb-5">
-              {/* Generate button */}
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-11 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] transition-all duration-300"
-                onClick={handleGenerateSpec}
-                disabled={!hasRoom || isSpecPending}
-              >
-                {isSpecPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                Generate Spec
-              </Button>
-
-              {/* Demo spec card */}
-              <div className="rounded-xl border border-border bg-card/50 hover:bg-white/[0.04] hover:border-primary/30 transition-all duration-300 p-4 flex flex-col gap-3 shadow-md group">
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                    <FileText className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <p className="text-sm font-semibold text-foreground leading-tight tracking-tight">{DEMO_SPEC.title}</p>
-                    <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed line-clamp-3">
-                      {DEMO_SPEC.snippet}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 mt-1 border-t border-border/50">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                    v1.0 · 2 pages
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled
-                    className="h-7 px-2.5 text-[11px] text-muted-foreground rounded-lg gap-1.5 hover:text-foreground hover:bg-white/10"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-
-              {/* Info note */}
-              <p className="text-[11px] text-muted-foreground leading-relaxed text-center font-medium mt-auto">
-                Spec generation is wired to the AI Architect output.
-              </p>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialog Preview */}
+      <Dialog open={!!selectedSpec} onOpenChange={(open) => { if (!open) setSelectedSpec(null); }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col bg-[#0f0f11]/95 backdrop-blur-2xl border-white/10 text-zinc-100 p-6 shadow-2xl rounded-2xl overflow-hidden pointer-events-auto">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <FileText className="h-5 w-5 text-primary" />
+              {selectedSpec ? `Specification ${selectedSpec.id.substring(0, 8)}` : "Specification Preview"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              {selectedSpec && `Generated on ${new Date(selectedSpec.createdAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 min-h-0 mt-4 overflow-y-auto pr-1">
+            {isLoadingSpecContent ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm font-medium">Fetching specification content...</p>
+              </div>
+            ) : specContent ? (
+              <div className="rounded-xl border border-white/5 bg-black/45 p-5">
+                <SimpleMarkdown content={specContent} />
+              </div>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                No content available.
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-4 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-white/10 hover:bg-white/5 text-xs h-9 px-4 text-zinc-300"
+              onClick={() => setSelectedSpec(null)}
+            >
+              Close
+            </Button>
+            {selectedSpec && (
+              <Button
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl text-xs h-9 px-4 shadow-[0_0_10px_rgba(34,211,238,0.2)] hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all"
+                onClick={() => handleDownloadSpec(selectedSpec)}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Download
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -471,15 +558,201 @@ const ArchitectTabContent = ({
   );
 };
 
+function SimpleMarkdown({ content }: { content: string }) {
+  const lines = content.split("\n");
+
+  return (
+    <div className="space-y-3 text-sm leading-relaxed text-zinc-300 font-sans pr-2">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+
+        // Headers
+        if (trimmed.startsWith("# ")) {
+          return (
+            <h1 key={index} className="text-xl font-bold text-foreground border-b border-border pb-2 mt-6 mb-3">
+              {trimmed.slice(2)}
+            </h1>
+          );
+        }
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h2 key={index} className="text-lg font-semibold text-foreground mt-5 mb-2.5">
+              {trimmed.slice(3)}
+            </h2>
+          );
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h3 key={index} className="text-base font-semibold text-foreground mt-4 mb-2">
+              {trimmed.slice(4)}
+            </h3>
+          );
+        }
+
+        // List items
+        const isListItem = trimmed.startsWith("- ") || trimmed.startsWith("* ");
+        if (isListItem) {
+          const listText = trimmed.slice(2);
+          const parts = listText.split("**");
+          return (
+            <li key={index} className="list-disc pl-2 ml-4 text-zinc-300">
+              {parts.map((part, i) => (i % 2 === 1 ? <strong key={i} className="font-semibold text-foreground">{part}</strong> : part))}
+            </li>
+          );
+        }
+
+        // Empty lines
+        if (trimmed === "") {
+          return <div key={index} className="h-1.5" />;
+        }
+
+        // Horizontal rule
+        if (trimmed === "---") {
+          return <hr key={index} className="my-4 border-border" />;
+        }
+
+        // Normal paragraph with bold parsing
+        const parts = trimmed.split("**");
+        return (
+          <p key={index} className="text-zinc-300">
+            {parts.map((part, i) => (i % 2 === 1 ? <strong key={i} className="font-semibold text-foreground">{part}</strong> : part))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+const SpecsTabContent = ({
+  roomContext,
+  hasRoom,
+  roomId,
+  isSpecPending,
+  handleGenerateSpec,
+  specs,
+  isLoadingSpecs,
+  onSelectSpec,
+}: {
+  roomContext: AiSidebarRoomContext;
+  hasRoom: boolean;
+  roomId?: string;
+  isSpecPending: boolean;
+  handleGenerateSpec: () => void;
+  specs: ProjectSpec[];
+  isLoadingSpecs: boolean;
+  onSelectSpec: (spec: ProjectSpec) => void;
+}) => {
+  const isAiActive = roomContext.status.isActive;
+
+  const handleDownloadSpec = (spec: ProjectSpec) => {
+    window.open(`/api/projects/${roomId}/specs/${spec.id}/download`, "_blank");
+  };
+
+  return (
+    <TabsContent value="specs" className="flex flex-col flex-1 min-h-0 mt-3">
+      <div className="flex flex-col gap-4 px-5 pb-5 flex-1 min-h-0 overflow-y-auto">
+        {/* Generate button */}
+        <Button
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-11 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] transition-all duration-300 shrink-0"
+          onClick={handleGenerateSpec}
+          disabled={!hasRoom || isSpecPending || isAiActive}
+        >
+          {isSpecPending || isAiActive ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Sparkles className="h-4 w-4 mr-2" />
+          )}
+          Generate Spec
+        </Button>
+
+        <ScrollArea className="flex-1 -mx-2 px-2">
+          {isLoadingSpecs ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-xs">Loading specifications...</p>
+            </div>
+          ) : specs.length === 0 ? (
+            <div className="text-center py-12 px-4 border border-dashed border-border rounded-2xl bg-card/20 mt-2">
+              <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2.5 opacity-50" />
+              <p className="text-xs font-semibold text-foreground">No Specs Generated Yet</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed max-w-[200px] mx-auto">
+                Click the button above to generate a technical spec from your design canvas.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 mt-1 pb-4">
+              {specs.map((spec) => {
+                const specDate = new Date(spec.createdAt).toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                
+                return (
+                  <div
+                    key={spec.id}
+                    className="rounded-xl border border-border bg-card/50 hover:bg-white/[0.04] hover:border-primary/30 transition-all duration-300 p-3.5 flex flex-col gap-3 shadow-md group pointer-events-auto cursor-pointer"
+                    onClick={() => onSelectSpec(spec)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                        <FileText className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <p className="text-xs font-semibold text-foreground leading-tight tracking-tight truncate">
+                          Specification {spec.id.substring(0, 8)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                          Generated on {specDate}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2.5 border-t border-border/50">
+                      <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-semibold">
+                        v1.0
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] text-muted-foreground rounded-lg gap-1 hover:text-foreground hover:bg-white/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadSpec(spec);
+                        }}
+                      >
+                        <Download className="h-3 w-3" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Info note */}
+        <p className="text-[11px] text-muted-foreground leading-relaxed text-center font-medium mt-auto shrink-0 pt-2">
+          Spec generation is wired to the AI Architect output.
+        </p>
+      </div>
+    </TabsContent>
+  );
+};
+
 function AiSidebarRoomState({
   children,
   roomId,
+  onStatusComplete,
 }: {
   children: (context: AiSidebarRoomContext) => ReactNode;
   roomId: string;
+  onStatusComplete?: () => void;
 }) {
   const self = useSelf();
   const createFeed = useCreateFeed();
+  const [lastState, setLastState] = useState<string | null>(null);
   const addFeedMessage = useCreateFeedMessage();
   const { messages: statusMessages } = useFeedMessages(AI_STATUS_FEED_ID, { limit: 10 });
   const { messages: chatFeedMessages } = useFeedMessages(AI_CHAT_FEED_ID, { limit: 50 });
@@ -572,6 +845,15 @@ function AiSidebarRoomState({
     (!latestFeedStatus || eventMessage.createdAt >= latestFeedStatus.createdAt)
       ? eventMessage
       : latestFeedStatus;
+
+  useEffect(() => {
+    if (latestStatus?.state === "complete" && lastState !== "complete" && lastState !== null) {
+      onStatusComplete?.();
+    }
+    if (latestStatus?.state) {
+      setLastState(latestStatus.state);
+    }
+  }, [latestStatus?.state, lastState, onStatusComplete]);
 
   const isFeedActive =
     latestStatus?.state === "started" || latestStatus?.state === "processing";

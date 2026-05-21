@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ReactFlowInstance } from "@xyflow/react";
 
 interface UseKeyboardShortcutsProps {
-  reactFlowInstance: ReactFlowInstance | null;
+  reactFlowInstance: ReactFlowInstance<any, any> | null;
   undo: () => void;
   redo: () => void;
 }

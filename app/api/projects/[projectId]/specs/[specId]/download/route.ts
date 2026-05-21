@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkProjectAccess } from "@/lib/project-access";
 import { prisma } from "@/lib/prisma";
+import { get } from "@vercel/blob";
 
 export async function GET(
   req: Request,
@@ -31,14 +32,15 @@ export async function GET(
       return new NextResponse("Spec not found", { status: 404 });
     }
 
-    const res = await fetch(spec.filePath);
-    if (!res.ok) {
+    const result = await get(spec.filePath, {
+      access: "private",
+    });
+
+    if (!result || result.statusCode !== 200) {
       return new NextResponse("Failed to fetch spec content", { status: 500 });
     }
 
-    const content = await res.text();
-
-    return new NextResponse(content, {
+    return new NextResponse(result.stream, {
       headers: {
         "Content-Type": "text/markdown",
         "Content-Disposition": `attachment; filename="spec-${specId}.md"`,
@@ -49,3 +51,4 @@ export async function GET(
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
+

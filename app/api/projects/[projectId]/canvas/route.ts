@@ -25,10 +25,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
   if (!project?.canvasJsonPath) {
     return NextResponse.json({ error: "No canvas saved" }, { status: 404 });
   }
-  const res = await fetch(project.canvasJsonPath);
-  if (!res.ok) {
+  try {
+    const result = await get(project.canvasJsonPath, {
+      access: "private",
+    });
+    if (!result || result.statusCode !== 200) {
+      return NextResponse.json({ error: "Failed to fetch canvas content" }, { status: 500 });
+    }
+    return new NextResponse(result.stream, {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("[CANVAS_LOAD_ERROR]", error);
     return NextResponse.json({ error: "Failed to fetch canvas" }, { status: 500 });
   }
-  const canvas = await res.json();
-  return NextResponse.json(canvas);
 }
+

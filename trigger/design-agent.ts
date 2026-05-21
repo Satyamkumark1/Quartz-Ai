@@ -77,6 +77,12 @@ const ALLOWED_SHAPES: NodeShape[] = [
   "cylinder",
   "pill",
   "hexagon",
+  "triangle",
+  "star",
+  "parallelogram",
+  "arrow",
+  "group",
+  "custom",
 ];
 const ALLOWED_COLORS = NODE_COLOR_PALETTE.map((color) => color.name);
 const DEFAULT_SIZE_BY_SHAPE: Record<NodeShape, Size> = {
@@ -87,6 +93,12 @@ const DEFAULT_SIZE_BY_SHAPE: Record<NodeShape, Size> = {
   pill: { width: 170, height: 72 },
   hexagon: { width: 150, height: 90 },
   text: { width: 120, height: 40 },
+  triangle: { width: 120, height: 120 },
+  star: { width: 120, height: 120 },
+  parallelogram: { width: 140, height: 90 },
+  arrow: { width: 140, height: 80 },
+  group: { width: 240, height: 180 },
+  custom: { width: 100, height: 100 },
 };
 const DEFAULT_MAX_OUTPUT_TOKENS = 2048;
 
