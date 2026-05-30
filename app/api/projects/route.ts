@@ -14,6 +14,10 @@ export async function GET() {
       where: {
         ownerId: userId,
       },
+      cacheStrategy: {
+        ttl: 60,
+        swr: 30,
+      },
       orderBy: {
         createdAt: "desc",
       },

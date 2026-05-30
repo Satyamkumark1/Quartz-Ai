@@ -27,6 +27,10 @@ export async function PATCH(
       where: {
         id: projectId,
       },
+      cacheStrategy: {
+        ttl: 30,
+        swr: 10,
+      },
     });
 
     if (!project) {
@@ -71,6 +75,10 @@ export async function DELETE(
     const project = await prisma.project.findUnique({
       where: {
         id: projectId,
+      },
+      cacheStrategy: {
+        ttl: 30,
+        swr: 10,
       },
     });
 

@@ -14,7 +14,7 @@ export function generateRoomId(name: string) {
 export function useProjectActions() {
   const router = useRouter();
   const params = useParams();
-  const currentWorkspaceId = params?.projectId as string | undefined;
+  const currentRoomId = params?.roomId as string | undefined;
   
   const {
     setIsCreateOpen,
@@ -69,7 +69,7 @@ export function useProjectActions() {
       });
       if (!res.ok) throw new Error("Failed to delete project");
       setIsDeleteOpen(false);
-      if (currentWorkspaceId === id) {
+      if (currentRoomId === id) {
         router.push("/editor");
       } else {
         router.refresh();

@@ -51,6 +51,10 @@ export async function getUserProjects() {
 
   const ownedProjectsData = await prisma.project.findMany({
     where: { ownerId: identity.userId },
+    cacheStrategy: {
+      ttl: 60,
+      swr: 30,
+    },
     orderBy: { createdAt: "desc" },
   });
 
